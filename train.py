@@ -117,6 +117,7 @@ def handler(context):
     di = {
             'NFOLD': NFOLD,
             'CLF': CLF,
+            'cols_train': cols_train
             
         }
     skf_env = open(os.path.join(ABEJA_TRAINING_RESULT_DIR, 'skf_env.json'), 'w')

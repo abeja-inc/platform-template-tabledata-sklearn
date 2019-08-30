@@ -46,7 +46,7 @@ else:
         
         try:
             if v in ['True', 'False']:
-                params[k] = bool(v)
+                params[k] = (v == 'True')
             elif v == 'None':
                 params[k] = None
             else:
@@ -60,22 +60,25 @@ else:
             params[k] = v
 
 NFOLD = int(os.getenv('NFOLD', '5'))
+if NFOLD <= 1:
+    raise Exception(f'NFOLD must be larger than 2 for now. {NFOLD} was passed')
+    
 skf = StratifiedKFold(n_splits=NFOLD)
 
-CLF = os.getenv('CLF')
-if CLF is None:
-    model = LinearRegression
-    
-elif CLF == 'LinearRegression':
+CLASSIFIER = os.getenv('CLASSIFIER')
+if CLASSIFIER is None:
     classifier = LinearRegression
     
-elif CLF == 'LogisticRegression':
+elif CLASSIFIER == 'LinearRegression':
+    classifier = LinearRegression
+    
+elif CLASSIFIER == 'LogisticRegression':
     classifier = LogisticRegression
     
-elif CLF == 'SVR':
+elif CLASSIFIER == 'SVR':
     classifier = SVR
 
-elif CLF == 'SVC':
+elif CLASSIFIER == 'SVC':
     classifier = SVC
 
 
@@ -116,7 +119,7 @@ def handler(context):
     
     di = {
             'NFOLD': NFOLD,
-            'CLF': CLF,
+            'CLASSIFIER': CLASSIFIER,
             'cols_train': cols_train
             
         }

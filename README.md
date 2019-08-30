@@ -17,7 +17,7 @@ TARGET_FIELD|True|None|Name of target column.
 ### Scikit-Learn
 env name|required|default|description
 --------|--------|-------|-----------
-CLF|False|LinearRegression|Name of algorithm. You can choose LinearRegression, LogisticRegression, SVR and SVC.
+CLASSIFIER|False|LinearRegression|Name of algorithm. You can choose LinearRegression, LogisticRegression, SVR and SVC.
 PARAMS|False|dict|Parameters for model. <br>e.g. max_iter=1000,n_jobs=-1
 NFOLD|False|5|To be passed to nfold.
 

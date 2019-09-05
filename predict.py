@@ -50,8 +50,7 @@ def handler(request, context):
         
         print(pred)
         
-        df = pd.read_csv(csvfile)
-        df['pred'] = pred
+        X_test['pred'] = pred
         
         return {
             'status_code': http.HTTPStatus.OK,

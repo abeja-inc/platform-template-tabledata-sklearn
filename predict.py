@@ -55,7 +55,7 @@ def handler(request, context):
         return {
             'status_code': http.HTTPStatus.OK,
             'content_type': 'application/json; charset=utf8',
-            'content': {'result': X_test}
+            'content': {'result': X_test.values}
         }
     except Exception as e:
         print(str(e))

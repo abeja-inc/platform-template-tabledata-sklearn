@@ -9,9 +9,8 @@ import pandas as pd
 import numpy as np
 
 
-# Configurable, but you don't need to set this. Default is "~/.abeja/.cache" in ABEJA Platform.
-ABEJA_STORAGE_DIR_PATH = os.getenv('ABEJA_STORAGE_DIR_PATH')
-ABEJA_TRAINING_RESULT_DIR = os.getenv('ABEJA_TRAINING_RESULT_DIR')
+ABEJA_STORAGE_DIR_PATH = os.getenv('ABEJA_STORAGE_DIR_PATH', '~/.abeja/.cache')
+ABEJA_TRAINING_RESULT_DIR = os.getenv('ABEJA_TRAINING_RESULT_DIR', 'abejainc_training_result')
 
 with open(os.path.join(ABEJA_TRAINING_RESULT_DIR, 'skf_env.json')) as f:
     skf_env = json.load(f)

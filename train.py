@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from abeja.datalake import Client as DatalakeClient
 from sklearn.linear_model import LinearRegression, LogisticRegression
-# from sklearn.svm import SVR, SVC
+from sklearn.svm import SVR, SVC
 from sklearn.svm import LinearSVR, LinearSVC
 from sklearn.model_selection import StratifiedKFold
 
@@ -37,10 +37,10 @@ elif Parameters.CLASSIFIER == 'LinearRegression':
     classifier = LinearRegression
 elif Parameters.CLASSIFIER == 'LogisticRegression':
     classifier = LogisticRegression
-# elif Parameters.CLASSIFIER == 'SVR':
-#     classifier = SVR
-# elif Parameters.CLASSIFIER == 'SVC':
-#     classifier = SVC
+elif Parameters.CLASSIFIER == 'SVR':
+    classifier = SVR
+elif Parameters.CLASSIFIER == 'SVC':
+    classifier = SVC
 elif Parameters.CLASSIFIER == 'LinearSVR':
     classifier = LinearSVR
 elif Parameters.CLASSIFIER == 'LinearSVC':

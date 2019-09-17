@@ -1,5 +1,7 @@
 import os
+import csv
 import json
+from io import StringIO
 
 
 def get_env_var(key, converter, default=None):
@@ -19,7 +21,8 @@ def get_env_var_bool(key, default: bool):
 def get_env_var_csv(key, converter):
     value = os.getenv(key)
     if value:
-        return list(set([converter(x.strip()) for x in value.split(',')]))
+        value = (list(csv.reader(StringIO(value))))[0]
+        return [converter(x.strip()) for x in value]
     return list()
 
 

@@ -169,7 +169,7 @@ class Parameters:
     _KERNEL_LIST = [
         "linear", "poly", "rbf", "sigmoid", "precomputed",
     ]
-    KERNEL = get_env_var_validate('KERNEL', str, "linear", list_=_KERNEL_LIST)
+    KERNEL = get_env_var_validate('KERNEL', str, "rbf", list_=_KERNEL_LIST)
     DEGREE = get_env_var('DEGREE', int, 3)
     GAMMA = get_env_var_gamma('GAMMA')
     COEF0 = get_env_var('COEF0', float, 0.0)

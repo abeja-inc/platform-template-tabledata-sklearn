@@ -11,7 +11,8 @@ import pandas as pd
 import numpy as np
 from abeja.datalake import Client as DatalakeClient
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.svm import SVR, SVC
+# from sklearn.svm import SVR, SVC
+from sklearn.svm import LinearSVR, LinearSVC
 from sklearn.model_selection import StratifiedKFold
 
 from parameters import Parameters
@@ -36,10 +37,14 @@ elif Parameters.CLASSIFIER == 'LinearRegression':
     classifier = LinearRegression
 elif Parameters.CLASSIFIER == 'LogisticRegression':
     classifier = LogisticRegression
-elif Parameters.CLASSIFIER == 'SVR':
-    classifier = SVR
-elif Parameters.CLASSIFIER == 'SVC':
-    classifier = SVC
+# elif Parameters.CLASSIFIER == 'SVR':
+#     classifier = SVR
+# elif Parameters.CLASSIFIER == 'SVC':
+#     classifier = SVC
+elif Parameters.CLASSIFIER == 'LinearSVR':
+    classifier = LinearSVR
+elif Parameters.CLASSIFIER == 'LinearSVC':
+    classifier = LinearSVC
 
 
 def handler(context):
@@ -67,6 +72,7 @@ def handler(context):
     models = []
     pred = np.zeros(len(X_train))
     for i, (train_index, valid_index) in enumerate(skf.split(X_train, y_train)):
+        print('cv {}'.format(i + 1))
         model = classifier(**PARAMS)
         model.fit(X_train.iloc[train_index], y_train[train_index])
         pred[valid_index] = model.predict(X_train.iloc[valid_index])
@@ -88,6 +94,7 @@ def handler(context):
     
     # load test
     if DATALAKE_TEST_FILE_ID is not None:
+        print("Run for test file.")
         datalake_client = DatalakeClient()
         channel = datalake_client.get_channel(DATALAKE_CHANNEL_ID)
         datalake_file = channel.get_file(DATALAKE_TEST_FILE_ID)

@@ -85,7 +85,9 @@ class Parameters:
     }
 
     _CLASSIFIER_LIST = [
-        "LinearRegression", "LogisticRegression", "SVR", "SVC"
+        "LinearRegression", "LogisticRegression",
+        # "SVR", "SVC",
+        "LinearSVR", "LinearSVC",
     ]
     CLASSIFIER = get_env_var_validate('CLASSIFIER', str, "LinearRegression", list_=_CLASSIFIER_LIST)
     NFOLD = get_env_var_validate('NFOLD', int, default=5, min_=2, max_=None)
@@ -108,7 +110,8 @@ class Parameters:
     }
 
     _PENALTY_LIST = [
-        "l1", "l2", "elasticnet", "none",
+        "l1", "l2",
+        # "elasticnet", "none",
     ]
     PENALTY = get_env_var_validate('PENALTY', str, "l2", list_=_PENALTY_LIST)
     DUAL = get_env_var_bool('DUAL', False)
@@ -130,8 +133,33 @@ class Parameters:
     WARM_START = get_env_var_bool('WARM_START', False)
     L1_RATIO = get_env_var_validate('L1_RATIO', float, min_=0, max_=1)
 
+    """LinearSVR Parameters"""
+    _LINEAR_SVR_PARAMETERS = {
+        "EPSILON", "SUPPORT_VECTOR_TOL", "C", "SVR_LOSS",
+        "FIT_INTERCEPT", "INTERCEPT_SCALING", "SUPPORT_VECTOR_DUAL",
+        "VERBOSE", "RANDOM_STATE", "SUPPORT_VECTOR_MAX_ITER"
+    }
+    EPSILON = get_env_var('EPSILON', float, 0.1)
+    SUPPORT_VECTOR_TOL = get_env_var_validate('SUPPORT_VECTOR_TOL', float, 1e-3, min_=1e-10)
+    SVR_LOSS = get_env_var_validate("SVR_LOSS", str, "epsilon_insensitive",
+                                    list_=["epsilon_insensitive", "squared_epsilon_insensitive"])
+    SUPPORT_VECTOR_MAX_ITER = get_env_var('SUPPORT_VECTOR_MAX_ITER', int, 1000)
+    SUPPORT_VECTOR_DUAL = get_env_var_bool('SUPPORT_VECTOR_DUAL', True)
+
+    """LinearSVC Parameters"""
+    _LINEAR_SVC_PARAMETERS = {
+        "PENALTY", "SVC_LOSS", "SUPPORT_VECTOR_DUAL", "SUPPORT_VECTOR_TOL", "C",
+        "SVC_MULTI_CLASS", "FIT_INTERCEPT", "INTERCEPT_SCALING", "CLASS_WEIGHT",
+        "VERBOSE", "RANDOM_STATE", "SUPPORT_VECTOR_MAX_ITER"
+    }
+    SVC_LOSS = get_env_var_validate("SVC_LOSS", str, "squared_hinge", list_=["hinge", "squared_hinge"])
+    _SVC_MULTI_CLASS_LIST = [
+        "ovr", "crammer_singer",
+    ]
+    SVC_MULTI_CLASS = get_env_var_validate('SVC_MULTI_CLASS', str, "ovr", list_=_SVC_MULTI_CLASS_LIST)
+
     """SVR Parameters"""
-    _SVR_PARAMETERS = {
+    """_SVR_PARAMETERS = {
         "KERNEL", "DEGREE", "GAMMA", "COEF0", "SUPPORT_VECTOR_TOL", "C",
         "EPSILON", "SHRINKING", "CACHE_SIZE", "SUPPORT_VECTOR_VERBOSE", "SUPPORT_VECTOR_MAX_ITER"
     }
@@ -143,22 +171,20 @@ class Parameters:
     DEGREE = get_env_var('DEGREE', int, 3)
     GAMMA = get_env_var_gamma('GAMMA')
     COEF0 = get_env_var('COEF0', float, 0.0)
-    EPSILON = get_env_var('COEF0', float, 0.1)
     SHRINKING = get_env_var_bool('SHRINKING', True)
     CACHE_SIZE = get_env_var('CACHE_SIZE', float, 200)
-    SUPPORT_VECTOR_TOL = get_env_var_validate('SUPPORT_VECTOR_TOL', float, 1e-3, min_=1e-10)
     SUPPORT_VECTOR_VERBOSE = get_env_var_bool('SUPPORT_VECTOR_VERBOSE', False)
-    SUPPORT_VECTOR_MAX_ITER = get_env_var('SUPPORT_VECTOR_MAX_ITER', int, -1)
+    SUPPORT_VECTOR_MAX_ITER = get_env_var('SUPPORT_VECTOR_MAX_ITER', int, -1)"""
 
     """SVC Parameters"""
-    _SVC_PARAMETERS = {
+    """_SVC_PARAMETERS = {
         "KERNEL", "DEGREE", "GAMMA", "COEF0", "SUPPORT_VECTOR_TOL", "C",
         "PROBABILITY", "SHRINKING", "CACHE_SIZE", "SUPPORT_VECTOR_VERBOSE", "SUPPORT_VECTOR_MAX_ITER",
         "CLASS_WEIGHT", "DECISION_FUNCTION_SHAPE", "RANDOM_STATE"
     }
 
     PROBABILITY = get_env_var_bool('PROBABILITY', False)
-    DECISION_FUNCTION_SHAPE = get_env_var_validate('DECISION_FUNCTION_SHAPE', str, "ovr", list_=["ovo", "ovr"])
+    DECISION_FUNCTION_SHAPE = get_env_var_validate('DECISION_FUNCTION_SHAPE', str, "ovr", list_=["ovo", "ovr"])"""
 
     """ABEJA Platform environment variables"""
     _SYSTEM_PARAMETERS = {
@@ -184,10 +210,14 @@ class Parameters:
             TARGET_LIST = {*cls._LINEAR_REGRESSION_PARAMETERS, *TARGET_LIST}
         elif params["CLASSIFIER"] == "LogisticRegression":
             TARGET_LIST = {*cls._LOGISTIC_REGRESSION_PARAMETERS, *TARGET_LIST}
-        elif params["CLASSIFIER"] == "SVR":
-            TARGET_LIST = {*cls._SVR_PARAMETERS, *TARGET_LIST}
-        elif params["CLASSIFIER"] == "SVC":
-            TARGET_LIST = {*cls._SVC_PARAMETERS, *TARGET_LIST}
+        # elif params["CLASSIFIER"] == "SVR":
+        #     TARGET_LIST = {*cls._SVR_PARAMETERS, *TARGET_LIST}
+        # elif params["CLASSIFIER"] == "SVC":
+        #     TARGET_LIST = {*cls._SVC_PARAMETERS, *TARGET_LIST}
+        elif params["CLASSIFIER"] == "LinearSVR":
+            TARGET_LIST = {*cls._LINEAR_SVR_PARAMETERS, *TARGET_LIST}
+        elif params["CLASSIFIER"] == "LinearSVC":
+            TARGET_LIST = {*cls._LINEAR_SVC_PARAMETERS, *TARGET_LIST}
         else:
             TARGET_LIST = {*cls._LINEAR_REGRESSION_PARAMETERS, *TARGET_LIST}
 
@@ -200,17 +230,63 @@ class Parameters:
     @classmethod
     def as_params(cls):
         params = cls.as_dict()
-        is_support_vector_app = False
         if params["CLASSIFIER"] == "LinearRegression":
             TARGET_LIST = cls._LINEAR_REGRESSION_PARAMETERS
         elif params["CLASSIFIER"] == "LogisticRegression":
             TARGET_LIST = cls._LOGISTIC_REGRESSION_PARAMETERS
-        elif params["CLASSIFIER"] == "SVR":
-            TARGET_LIST = cls._SVR_PARAMETERS
-            is_support_vector_app = True
-        elif params["CLASSIFIER"] == "SVC":
-            TARGET_LIST = cls._SVC_PARAMETERS
-            is_support_vector_app = True
+        # elif params["CLASSIFIER"] == "SVR":
+        #     TARGET_LIST = cls._SVR_PARAMETERS
+        #     TARGET_LIST.discard("SUPPORT_VECTOR_TOL")
+        #     TARGET_LIST.discard("SUPPORT_VECTOR_VERBOSE")
+        #     TARGET_LIST.discard("SUPPORT_VECTOR_MAX_ITER")
+        #     TARGET_LIST.add("TOL")
+        #     TARGET_LIST.add("VERBOSE")
+        #     TARGET_LIST.add("MAX_ITER")
+        #     params["TOL"] = params.pop("SUPPORT_VECTOR_TOL")
+        #     params["VERBOSE"] = params.pop("SUPPORT_VECTOR_VERBOSE")
+        #     params["MAX_ITER"] = params.pop("SUPPORT_VECTOR_MAX_ITER")
+        # elif params["CLASSIFIER"] == "SVC":
+        #     TARGET_LIST = cls._SVC_PARAMETERS
+        #     TARGET_LIST.discard("SUPPORT_VECTOR_TOL")
+        #     TARGET_LIST.discard("SUPPORT_VECTOR_VERBOSE")
+        #     TARGET_LIST.discard("SUPPORT_VECTOR_MAX_ITER")
+        #     TARGET_LIST.add("TOL")
+        #     TARGET_LIST.add("VERBOSE")
+        #     TARGET_LIST.add("MAX_ITER")
+        #     params["TOL"] = params.pop("SUPPORT_VECTOR_TOL")
+        #     params["VERBOSE"] = params.pop("SUPPORT_VECTOR_VERBOSE")
+        #     params["MAX_ITER"] = params.pop("SUPPORT_VECTOR_MAX_ITER")
+        elif params["CLASSIFIER"] == "LinearSVR":
+            TARGET_LIST = cls._LINEAR_SVR_PARAMETERS
+            TARGET_LIST.discard("SUPPORT_VECTOR_TOL")
+            TARGET_LIST.discard("SUPPORT_VECTOR_MAX_ITER")
+            TARGET_LIST.discard("SUPPORT_VECTOR_DUAL")
+            TARGET_LIST.discard("SVR_LOSS")
+            TARGET_LIST.add("TOL")
+            TARGET_LIST.add("MAX_ITER")
+            TARGET_LIST.add("DUAL")
+            TARGET_LIST.add("LOSS")
+            params["TOL"] = params.pop("SUPPORT_VECTOR_TOL")
+            params["MAX_ITER"] = params.pop("SUPPORT_VECTOR_MAX_ITER")
+            params["DUAL"] = params.pop("SUPPORT_VECTOR_DUAL")
+            params["LOSS"] = params.pop("SVR_LOSS")
+        elif params["CLASSIFIER"] == "LinearSVC":
+            TARGET_LIST = cls._LINEAR_SVC_PARAMETERS
+            TARGET_LIST.discard("SUPPORT_VECTOR_TOL")
+            TARGET_LIST.discard("SUPPORT_VECTOR_MAX_ITER")
+            TARGET_LIST.discard("SUPPORT_VECTOR_DUAL")
+            TARGET_LIST.discard("SVC_LOSS")
+            TARGET_LIST.discard("SVC_MULTI_CLASS")
+            TARGET_LIST.add("TOL")
+            TARGET_LIST.add("MAX_ITER")
+            TARGET_LIST.add("DUAL")
+            TARGET_LIST.add("LOSS")
+            TARGET_LIST.add("MULTI_CLASS")
+            params["TOL"] = params.pop("SUPPORT_VECTOR_TOL")
+            params["MAX_ITER"] = params.pop("SUPPORT_VECTOR_MAX_ITER")
+            params["DUAL"] = params.pop("SUPPORT_VECTOR_DUAL")
+            params["LOSS"] = params.pop("SVC_LOSS")
+            params["MULTI_CLASS"] = params.pop("SVC_MULTI_CLASS")
         else:
             TARGET_LIST = cls._LINEAR_REGRESSION_PARAMETERS
 
@@ -222,8 +298,4 @@ class Parameters:
             rtn["C"] = rtn.pop("c")
         if "copy_x" in rtn:
             rtn["copy_X"] = rtn.pop("copy_x")
-        if is_support_vector_app:
-            rtn["tol"] = rtn.pop("support_vector_tol")
-            rtn["verbose"] = rtn.pop("support_vector_verbose")
-            rtn["max_iter"] = rtn.pop("support_vector_max_iter")
         return rtn

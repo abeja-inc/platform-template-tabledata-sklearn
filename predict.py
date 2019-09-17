@@ -17,6 +17,8 @@ Path(ABEJA_TRAINING_RESULT_DIR).mkdir(exist_ok=True)
 with open(os.path.join(ABEJA_TRAINING_RESULT_DIR, 'skf_env.json')) as f:
     skf_env = json.load(f)
     NFOLD = skf_env.get('NFOLD')
+    IS_MULTI = "MULTI_CLASS" in skf_env or "SVC_MULTI_CLASS" in skf_env
+    NUM_CLASS = skf_env.get('NUM_CLASS')
     cols_train = skf_env.get('cols_train')
 
 models = []
@@ -44,10 +46,16 @@ def handler(request, context):
         
         X_test = pd.read_csv(csvfile, usecols=cols_train)[cols_train]
         
-        pred = np.zeros(len(X_test))
-        for model in models:
-            pred += model.predict(X_test)
-        pred /= len(models)
+        if IS_MULTI:
+            pred = np.zeros((len(X_test), NUM_CLASS))
+            for model in models:
+                pred += np.identity(NUM_CLASS)[model.predict(X_test)]
+            pred = np.argmax(pred, axis=1)
+        else:
+            pred = np.zeros(len(X_test))
+            for model in models:
+                pred += model.predict(X_test)
+            pred /= len(models)
         
         print(pred)
         

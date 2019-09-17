@@ -14,6 +14,7 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.svm import SVR, SVC
 from sklearn.svm import LinearSVR, LinearSVC
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 from parameters import Parameters
 
@@ -28,6 +29,8 @@ DATALAKE_TEST_FILE_ID = Parameters.DATALAKE_TEST_FILE_ID
 INPUT_FIELDS = Parameters.INPUT_FIELDS
 LABEL_FIELD = Parameters.LABEL_FIELD
 PARAMS = Parameters.as_params()
+IS_MULTI = "multi_class" in PARAMS
+NUM_CLASS = Parameters.NUM_CLASS
 
 skf = StratifiedKFold(n_splits=Parameters.NFOLD)
 
@@ -45,6 +48,11 @@ elif Parameters.CLASSIFIER == 'LinearSVR':
     classifier = LinearSVR
 elif Parameters.CLASSIFIER == 'LinearSVC':
     classifier = LinearSVC
+
+if IS_MULTI:
+    evaluator = accuracy_score
+else:
+    evaluator = roc_auc_score
 
 
 def handler(context):
@@ -76,6 +84,9 @@ def handler(context):
         model = classifier(**PARAMS)
         model.fit(X_train.iloc[train_index], y_train[train_index])
         pred[valid_index] = model.predict(X_train.iloc[valid_index])
+
+        score = evaluator(y_train[valid_index], pred[valid_index])
+        print('score={}'.format(score))
         
         filename = os.path.join(ABEJA_TRAINING_RESULT_DIR, f'model_{i}.pkl')
         pickle.dump(model, open(filename, 'wb'))
@@ -103,14 +114,19 @@ def handler(context):
         csvfile = Path(ABEJA_STORAGE_DIR_PATH, DATALAKE_CHANNEL_ID, DATALAKE_TEST_FILE_ID)
         X_test = pd.read_csv(csvfile, usecols=cols_train)[cols_train]
         
-        pred = np.zeros(len(X_test))
-        for model in models:
-            pred += model.predict(X_test)
-        pred /= len(models)
-        
+        if IS_MULTI:
+            pred = np.zeros((len(X_test), NUM_CLASS))
+            for model in models:
+                pred += np.identity(NUM_CLASS)[model.predict(X_test)]
+            pred = np.argmax(pred, axis=1)
+        else:
+            pred = np.zeros(len(X_test))
+            for model in models:
+                pred += model.predict(X_test)
+            pred /= len(models)
+
         print(pred)
-    
-    
+
     return
 
 

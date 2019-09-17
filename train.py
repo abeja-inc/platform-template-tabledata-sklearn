@@ -15,7 +15,9 @@ from sklearn.svm import SVR, SVC
 from sklearn.svm import LinearSVR, LinearSVC
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score, roc_auc_score
+from tensorboardX import SummaryWriter
 
+from callbacks import Statistics
 from parameters import Parameters
 
 
@@ -31,6 +33,11 @@ LABEL_FIELD = Parameters.LABEL_FIELD
 PARAMS = Parameters.as_params()
 IS_MULTI = "multi_class" in PARAMS
 NUM_CLASS = Parameters.NUM_CLASS
+
+statistics = Statistics(Parameters.NFOLD)
+
+log_path = os.path.join(ABEJA_TRAINING_RESULT_DIR, 'logs')
+writer = SummaryWriter(log_dir=log_path)
 
 skf = StratifiedKFold(n_splits=Parameters.NFOLD)
 
@@ -80,19 +87,28 @@ def handler(context):
     models = []
     pred = np.zeros(len(X_train))
     for i, (train_index, valid_index) in enumerate(skf.split(X_train, y_train)):
-        print('cv {}'.format(i + 1))
         model = classifier(**PARAMS)
         model.fit(X_train.iloc[train_index], y_train[train_index])
         pred[valid_index] = model.predict(X_train.iloc[valid_index])
 
         score = evaluator(y_train[valid_index], pred[valid_index])
-        print('score={}'.format(score))
-        
+
         filename = os.path.join(ABEJA_TRAINING_RESULT_DIR, f'model_{i}.pkl')
         pickle.dump(model, open(filename, 'wb'))
         
         models.append(model)
-    
+
+        print('-------------')
+        print('cv {} || score:{:.4f}'.format(i + 1, score))
+        statistics(i + 1, None, score, None, None)
+        writer.add_scalar('main/acc', score, i + 1)
+
+    score = evaluator(y_train, pred)
+    print('-------------')
+    print('cv total score:{:.4f}'.format(score))
+    statistics(Parameters.NFOLD, None, score, None, None)
+    writer.add_scalar('main/acc', score, Parameters.NFOLD)
+
     di = {
         **(Parameters.as_dict()),
         'cols_train': cols_train
@@ -104,7 +120,7 @@ def handler(context):
     del X_train; gc.collect()
     
     # load test
-    if DATALAKE_TEST_FILE_ID is not None:
+    if DATALAKE_TEST_FILE_ID:
         print("Run for test file.")
         datalake_client = DatalakeClient()
         channel = datalake_client.get_channel(DATALAKE_CHANNEL_ID)

@@ -4,6 +4,7 @@ import traceback
 from io import BytesIO
 import json
 import pickle
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
@@ -11,6 +12,7 @@ import numpy as np
 
 ABEJA_STORAGE_DIR_PATH = os.getenv('ABEJA_STORAGE_DIR_PATH', '~/.abeja/.cache')
 ABEJA_TRAINING_RESULT_DIR = os.getenv('ABEJA_TRAINING_RESULT_DIR', 'abejainc_training_result')
+Path(ABEJA_TRAINING_RESULT_DIR).mkdir(exist_ok=True)
 
 with open(os.path.join(ABEJA_TRAINING_RESULT_DIR, 'skf_env.json')) as f:
     skf_env = json.load(f)

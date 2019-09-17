@@ -19,6 +19,8 @@ from parameters import Parameters
 
 ABEJA_STORAGE_DIR_PATH = Parameters.ABEJA_STORAGE_DIR_PATH
 ABEJA_TRAINING_RESULT_DIR = Parameters.ABEJA_TRAINING_RESULT_DIR
+Path(ABEJA_TRAINING_RESULT_DIR).mkdir(exist_ok=True)
+
 DATALAKE_CHANNEL_ID = Parameters.DATALAKE_CHANNEL_ID
 DATALAKE_TRAIN_FILE_ID = Parameters.DATALAKE_TRAIN_FILE_ID
 DATALAKE_TEST_FILE_ID = Parameters.DATALAKE_TEST_FILE_ID
@@ -50,12 +52,11 @@ def handler(context):
     datalake_file.get_content(cache=True)
     
     csvfile = Path(ABEJA_STORAGE_DIR_PATH, DATALAKE_CHANNEL_ID, DATALAKE_TRAIN_FILE_ID)
-    if INPUT_FIELDS is None:
-        train = pd.read_csv(csvfile)
+    if INPUT_FIELDS:
+        train = pd.read_csv(csvfile, usecols=INPUT_FIELDS+[LABEL_FIELD])
     else:
-        usecols = INPUT_FIELDS.split(',')
-        train = pd.read_csv(csvfile, usecols=usecols+[LABEL_FIELD])
-    
+        train = pd.read_csv(csvfile)
+
     y_train = train[LABEL_FIELD].values
     cols_drop = [c for c in train.columns if train[c].dtype == 'O'] + [LABEL_FIELD]
     train.drop(cols_drop, axis=1, inplace=True)

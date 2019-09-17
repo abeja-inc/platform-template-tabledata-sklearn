@@ -139,7 +139,7 @@ class Parameters:
     _KERNEL_LIST = [
         "linear", "poly", "rbf", "sigmoid", "precomputed",
     ]
-    KERNEL = get_env_var_validate('KERNEL', str, "rbf", list_=_KERNEL_LIST)
+    KERNEL = get_env_var_validate('KERNEL', str, "linear", list_=_KERNEL_LIST)
     DEGREE = get_env_var('DEGREE', int, 3)
     GAMMA = get_env_var_gamma('GAMMA')
     COEF0 = get_env_var('COEF0', float, 0.0)
@@ -176,20 +176,20 @@ class Parameters:
         }
 
         TARGET_LIST = {
-            **cls._USER_PARAMETERS,
-            **cls._CORE_PARAMETERS,
-            **cls._SYSTEM_PARAMETERS
+            *cls._USER_PARAMETERS,
+            *cls._CORE_PARAMETERS,
+            *cls._SYSTEM_PARAMETERS
         }
         if params["CLASSIFIER"] == "LinearRegression":
-            TARGET_LIST = {**cls._LINEAR_REGRESSION_PARAMETERS, **TARGET_LIST}
+            TARGET_LIST = {*cls._LINEAR_REGRESSION_PARAMETERS, *TARGET_LIST}
         elif params["CLASSIFIER"] == "LogisticRegression":
-            TARGET_LIST = {**cls._LOGISTIC_REGRESSION_PARAMETERS, **TARGET_LIST}
+            TARGET_LIST = {*cls._LOGISTIC_REGRESSION_PARAMETERS, *TARGET_LIST}
         elif params["CLASSIFIER"] == "SVR":
-            TARGET_LIST = {**cls._SVR_PARAMETERS, **TARGET_LIST}
+            TARGET_LIST = {*cls._SVR_PARAMETERS, *TARGET_LIST}
         elif params["CLASSIFIER"] == "SVC":
-            TARGET_LIST = {**cls._SVC_PARAMETERS, **TARGET_LIST}
+            TARGET_LIST = {*cls._SVC_PARAMETERS, *TARGET_LIST}
         else:
-            TARGET_LIST = {**cls._LINEAR_REGRESSION_PARAMETERS, **TARGET_LIST}
+            TARGET_LIST = {*cls._LINEAR_REGRESSION_PARAMETERS, *TARGET_LIST}
 
         rtn = {
             k: v for k, v in params.items()
@@ -218,6 +218,10 @@ class Parameters:
             k.lower(): v for k, v in params.items()
             if k in TARGET_LIST
         }
+        if "c" in rtn:
+            rtn["C"] = rtn.pop("c")
+        if "copy_x" in rtn:
+            rtn["copy_X"] = rtn.pop("copy_x")
         if is_support_vector_app:
             rtn["tol"] = rtn.pop("support_vector_tol")
             rtn["verbose"] = rtn.pop("support_vector_verbose")

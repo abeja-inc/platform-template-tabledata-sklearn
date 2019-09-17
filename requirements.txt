@@ -1,5 +1,4 @@
 pandas==0.24.2
 numpy==1.17.0
 scikit-learn==0.21.3
-python-json-logger==0.1.10
 tensorboardX==1.8

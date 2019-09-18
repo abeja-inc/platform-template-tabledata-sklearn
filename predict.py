@@ -30,7 +30,7 @@ for i in range(NFOLD):
 
 
 def handler(request, context):
-    print('Start predict handler.')
+    print(f'start prediction with request : {request}, context : {context}')
     if 'http_method' not in request:
         message = 'Error: Support only "abeja/all-cpu:19.04" or "abeja/all-gpu:19.04".'
         print(message)

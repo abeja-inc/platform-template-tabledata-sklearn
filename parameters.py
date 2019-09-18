@@ -72,12 +72,12 @@ class Parameters:
     """
     """User Parameters"""
     _USER_PARAMETERS = {
-        "DATALAKE_CHANNEL_ID", "DATALAKE_TRAIN_FILE_ID", "DATALAKE_TEST_FILE_ID", "INPUT_FIELDS", "LABEL_FIELD"
+        "DATALAKE_CHANNEL_ID", "DATALAKE_TRAIN_FILE_ID", "DATALAKE_VAL_FILE_ID", "INPUT_FIELDS", "LABEL_FIELD"
     }
 
     DATALAKE_CHANNEL_ID = get_env_var_required('DATALAKE_CHANNEL_ID', str)
     DATALAKE_TRAIN_FILE_ID = get_env_var_required('DATALAKE_TRAIN_FILE_ID', str)
-    DATALAKE_TEST_FILE_ID = os.getenv('DATALAKE_TEST_FILE_ID')
+    DATALAKE_VAL_FILE_ID = os.getenv('DATALAKE_VAL_FILE_ID')
 
     INPUT_FIELDS = get_env_var_csv('INPUT_FIELDS', str)
     LABEL_FIELD = get_env_var_required('LABEL_FIELD', str)
@@ -191,14 +191,6 @@ class Parameters:
     PROBABILITY = get_env_var_bool('PROBABILITY', False)
     DECISION_FUNCTION_SHAPE = get_env_var_validate('DECISION_FUNCTION_SHAPE', str, "ovr", list_=["ovo", "ovr"])
 
-    """ABEJA Platform environment variables"""
-    _SYSTEM_PARAMETERS = {
-        "ABEJA_STORAGE_DIR_PATH", "ABEJA_TRAINING_RESULT_DIR"
-    }
-
-    ABEJA_STORAGE_DIR_PATH = os.getenv('ABEJA_STORAGE_DIR_PATH', '~/.abeja/.cache')
-    ABEJA_TRAINING_RESULT_DIR = os.getenv('ABEJA_TRAINING_RESULT_DIR', 'abejainc_training_result')
-
     @classmethod
     def as_dict(cls):
         params = {
@@ -209,7 +201,6 @@ class Parameters:
         TARGET_LIST = {
             *cls._USER_PARAMETERS,
             *cls._CORE_PARAMETERS,
-            *cls._SYSTEM_PARAMETERS
         }
         if params["CLASSIFIER"] == "LinearRegression":
             TARGET_LIST = {*cls._LINEAR_REGRESSION_PARAMETERS, *TARGET_LIST}

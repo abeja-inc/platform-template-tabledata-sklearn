@@ -2,14 +2,11 @@
 # Template: 
 
 import os
-import gc
 import json
 from pathlib import Path
 import pickle
 
-import pandas as pd
 import numpy as np
-from abeja.datalake import Client as DatalakeClient
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.svm import SVR, SVC
 from sklearn.svm import LinearSVR, LinearSVC
@@ -18,11 +15,12 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 from tensorboardX import SummaryWriter
 
 from callbacks import Statistics
+from data_loader import train_data_loader
 from parameters import Parameters
 
 
-ABEJA_STORAGE_DIR_PATH = Parameters.ABEJA_STORAGE_DIR_PATH
-ABEJA_TRAINING_RESULT_DIR = Parameters.ABEJA_TRAINING_RESULT_DIR
+ABEJA_STORAGE_DIR_PATH = os.getenv('ABEJA_STORAGE_DIR_PATH', '~/.abeja/.cache')
+ABEJA_TRAINING_RESULT_DIR = os.getenv('ABEJA_TRAINING_RESULT_DIR', 'abejainc_training_result')
 Path(ABEJA_TRAINING_RESULT_DIR).mkdir(exist_ok=True)
 
 DATALAKE_CHANNEL_ID = Parameters.DATALAKE_CHANNEL_ID
@@ -65,49 +63,63 @@ else:
 def handler(context):
     print(f'start training with parameters : {Parameters.as_dict()}, context : {context}')
     
-    # load train
-    datalake_client = DatalakeClient()
-    channel = datalake_client.get_channel(DATALAKE_CHANNEL_ID)
-    datalake_file = channel.get_file(DATALAKE_TRAIN_FILE_ID)
-    datalake_file.get_content(cache=True)
-    
-    csvfile = Path(ABEJA_STORAGE_DIR_PATH, DATALAKE_CHANNEL_ID, DATALAKE_TRAIN_FILE_ID)
-    if INPUT_FIELDS:
-        train = pd.read_csv(csvfile, usecols=INPUT_FIELDS+[LABEL_FIELD])
-    else:
-        train = pd.read_csv(csvfile)
-
-    y_train = train[LABEL_FIELD].values
-    cols_drop = [c for c in train.columns if train[c].dtype == 'O'] + [LABEL_FIELD]
-    train.drop(cols_drop, axis=1, inplace=True)
-    X_train = train
-    cols_train = X_train.columns.tolist()
-    del train
-    
+    X_train, y_train, cols_train = train_data_loader(
+        DATALAKE_CHANNEL_ID, DATALAKE_TRAIN_FILE_ID, LABEL_FIELD, INPUT_FIELDS)
     models = []
     pred = np.zeros(len(X_train))
+
+    if DATALAKE_VAL_FILE_ID:
+        X_val, y_val, _ = train_data_loader(
+            DATALAKE_CHANNEL_ID, DATALAKE_VAL_FILE_ID, LABEL_FIELD, INPUT_FIELDS)
+        if IS_MULTI:
+            pred_val = np.zeros((len(X_val), NUM_CLASS))
+        else:
+            pred_val = np.zeros(len(X_val))
+    else:
+        X_val, y_val, pred_val = None, None, None
+
     for i, (train_index, valid_index) in enumerate(skf.split(X_train, y_train)):
         model = classifier(**PARAMS)
         model.fit(X_train.iloc[train_index], y_train[train_index])
         pred[valid_index] = model.predict(X_train.iloc[valid_index])
 
         score = evaluator(y_train[valid_index], pred[valid_index])
+        score_val = 0.0
 
         filename = os.path.join(ABEJA_TRAINING_RESULT_DIR, f'model_{i}.pkl')
         pickle.dump(model, open(filename, 'wb'))
         
         models.append(model)
 
+        if DATALAKE_VAL_FILE_ID:
+            pred_val_cv = model.predict(X_val)
+            if IS_MULTI:
+                pred_val += np.identity(NUM_CLASS)[pred_val_cv]
+            else:
+                pred_val += pred_val_cv
+            score_val = evaluator(y_val, pred_val_cv)
+
         print('-------------')
-        print('cv {} || score:{:.4f}'.format(i + 1, score))
-        statistics(i + 1, None, score, None, None)
+        print('cv {} || score:{:.4f} || val_score:{:.4f}'.format(i + 1, score, score_val))
         writer.add_scalar('main/acc', score, i + 1)
+        writer.add_scalar('test/acc', score_val, i + 1)
+        statistics(i + 1, None, score, None, score_val)
 
     score = evaluator(y_train, pred)
+    score_val = 0.0
+
+    if DATALAKE_VAL_FILE_ID:
+        if IS_MULTI:
+            pred_val = np.argmax(pred_val, axis=1)
+        else:
+            pred_val /= len(models)
+        score_val = evaluator(y_val, pred_val)
+
     print('-------------')
-    print('cv total score:{:.4f}'.format(score))
-    statistics(Parameters.NFOLD, None, score, None, None)
+    print('cv total score:{:.4f} || cv total val_score:{:.4f}'.format(score, score_val))
+    statistics(Parameters.NFOLD, None, score, None, score_val)
     writer.add_scalar('main/acc', score, Parameters.NFOLD)
+    writer.add_scalar('test/acc', score_val, Parameters.NFOLD)
 
     di = {
         **(Parameters.as_dict()),
@@ -116,33 +128,6 @@ def handler(context):
     skf_env = open(os.path.join(ABEJA_TRAINING_RESULT_DIR, 'skf_env.json'), 'w')
     json.dump(di, skf_env)
     skf_env.close()
-    
-    del X_train; gc.collect()
-    
-    # load test
-    if DATALAKE_VAL_FILE_ID:
-        print("Run for test file.")
-        datalake_client = DatalakeClient()
-        channel = datalake_client.get_channel(DATALAKE_CHANNEL_ID)
-        datalake_file = channel.get_file(DATALAKE_VAL_FILE_ID)
-        datalake_file.get_content(cache=True)
-        
-        csvfile = Path(ABEJA_STORAGE_DIR_PATH, DATALAKE_CHANNEL_ID, DATALAKE_VAL_FILE_ID)
-        X_test = pd.read_csv(csvfile, usecols=cols_train)[cols_train]
-        
-        if IS_MULTI:
-            pred = np.zeros((len(X_test), NUM_CLASS))
-            for model in models:
-                pred += np.identity(NUM_CLASS)[model.predict(X_test)]
-            pred = np.argmax(pred, axis=1)
-        else:
-            pred = np.zeros(len(X_test))
-            for model in models:
-                pred += model.predict(X_test)
-            pred /= len(models)
-
-        print(pred)
-
     return
 
 

@@ -72,12 +72,12 @@ class Parameters:
     """
     """User Parameters"""
     _USER_PARAMETERS = {
-        "DATALAKE_CHANNEL_ID", "DATALAKE_TRAIN_FILE_ID", "DATALAKE_TEST_FILE_ID", "INPUT_FIELDS", "LABEL_FIELD"
+        "DATALAKE_CHANNEL_ID", "DATALAKE_TRAIN_FILE_ID", "DATALAKE_VAL_FILE_ID", "INPUT_FIELDS", "LABEL_FIELD"
     }
 
     DATALAKE_CHANNEL_ID = get_env_var_required('DATALAKE_CHANNEL_ID', str)
     DATALAKE_TRAIN_FILE_ID = get_env_var_required('DATALAKE_TRAIN_FILE_ID', str)
-    DATALAKE_TEST_FILE_ID = os.getenv('DATALAKE_TEST_FILE_ID')
+    DATALAKE_VAL_FILE_ID = os.getenv('DATALAKE_VAL_FILE_ID')
 
     INPUT_FIELDS = get_env_var_csv('INPUT_FIELDS', str)
     LABEL_FIELD = get_env_var_required('LABEL_FIELD', str)

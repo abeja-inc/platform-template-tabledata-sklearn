@@ -27,7 +27,7 @@ Path(ABEJA_TRAINING_RESULT_DIR).mkdir(exist_ok=True)
 
 DATALAKE_CHANNEL_ID = Parameters.DATALAKE_CHANNEL_ID
 DATALAKE_TRAIN_FILE_ID = Parameters.DATALAKE_TRAIN_FILE_ID
-DATALAKE_TEST_FILE_ID = Parameters.DATALAKE_TEST_FILE_ID
+DATALAKE_VAL_FILE_ID = Parameters.DATALAKE_VAL_FILE_ID
 INPUT_FIELDS = Parameters.INPUT_FIELDS
 LABEL_FIELD = Parameters.LABEL_FIELD
 PARAMS = Parameters.as_params()
@@ -120,14 +120,14 @@ def handler(context):
     del X_train; gc.collect()
     
     # load test
-    if DATALAKE_TEST_FILE_ID:
+    if DATALAKE_VAL_FILE_ID:
         print("Run for test file.")
         datalake_client = DatalakeClient()
         channel = datalake_client.get_channel(DATALAKE_CHANNEL_ID)
-        datalake_file = channel.get_file(DATALAKE_TEST_FILE_ID)
+        datalake_file = channel.get_file(DATALAKE_VAL_FILE_ID)
         datalake_file.get_content(cache=True)
         
-        csvfile = Path(ABEJA_STORAGE_DIR_PATH, DATALAKE_CHANNEL_ID, DATALAKE_TEST_FILE_ID)
+        csvfile = Path(ABEJA_STORAGE_DIR_PATH, DATALAKE_CHANNEL_ID, DATALAKE_VAL_FILE_ID)
         X_test = pd.read_csv(csvfile, usecols=cols_train)[cols_train]
         
         if IS_MULTI:

@@ -15,6 +15,8 @@ LABEL_FIELD|True|None|Name of label column.
 
 
 ### Scikit-Learn
+For regression, use one of `LinearRegression`, `LinearSVR` or `SVR`. For classification, use one of `LogisticRegression`, `LinearSVC` or `SVC`.
+
 #### Common Parameters
 env name|required|default|description
 --------|--------|-------|-----------

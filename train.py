@@ -10,13 +10,14 @@ import numpy as np
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.svm import SVR, SVC
 from sklearn.svm import LinearSVR, LinearSVC
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.metrics import accuracy_score, roc_auc_score
 from tensorboardX import SummaryWriter
 
 from callbacks import Statistics
 from data_loader import train_data_loader
 from parameters import Parameters
+from utils import inverse_root_mean_squared_error
 
 
 ABEJA_STORAGE_DIR_PATH = os.getenv('ABEJA_STORAGE_DIR_PATH', '~/.abeja/.cache')
@@ -37,7 +38,10 @@ statistics = Statistics(Parameters.NFOLD)
 log_path = os.path.join(ABEJA_TRAINING_RESULT_DIR, 'logs')
 writer = SummaryWriter(log_dir=log_path)
 
-skf = StratifiedKFold(n_splits=Parameters.NFOLD)
+if Parameters.STRATIFIED and Parameters.IS_CLASSIFICATION:
+    skf = StratifiedKFold(n_splits=Parameters.NFOLD)
+else:
+    skf = KFold(n_splits=Parameters.NFOLD)
 
 if Parameters.CLASSIFIER is None:
     classifier = LinearRegression
@@ -54,7 +58,9 @@ elif Parameters.CLASSIFIER == 'LinearSVR':
 elif Parameters.CLASSIFIER == 'LinearSVC':
     classifier = LinearSVC
 
-if IS_MULTI:
+if not Parameters.IS_CLASSIFICATION:
+    evaluator = inverse_root_mean_squared_error
+elif IS_MULTI:
     evaluator = accuracy_score
 else:
     evaluator = roc_auc_score

@@ -15,12 +15,14 @@ LABEL_FIELD|True|None|Name of label column.
 
 
 ### Scikit-Learn
-For regression, use one of `LinearRegression`, `LinearSVR` or `SVR`. For classification, use one of `LogisticRegression`, `LinearSVC` or `SVC`.
+For regression, use one of `LinearRegression`, `LinearSVR` or `SVR` with `IS_CLASSIFICATION=False`. For classification, use one of `LogisticRegression`, `LinearSVC` or `SVC`.
 
 #### Common Parameters
 env name|required|default|description
 --------|--------|-------|-----------
 CLASSIFIER|False|LinearRegression|Name of algorithm. You can choose LinearRegression, LogisticRegression, LinearSVR, LinearSVC, SVR and SVC.
+IS_CLASSIFICATION|False|True|If `True`, classification, else regression.
+STRATIFIED|False|True|Whether to perform stratified sampling.
 NFOLD|False|5|Number of folds in CV. constraints: `NFOLD > 2`.
 NUM_CLASS|False|2|Number of classes. Used only in `LogisticRegression` and `LinearSVC`. constraints: `NUM_CLASS > 2`. `2` means binary classification.
 

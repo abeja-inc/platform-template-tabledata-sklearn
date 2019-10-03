@@ -84,7 +84,7 @@ class Parameters:
 
     """Core Parameters"""
     _CORE_PARAMETERS = {
-        "CLASSIFIER", "NFOLD", "NUM_CLASS"
+        "CLASSIFIER", "IS_CLASSIFICATION", "STRATIFIED", "NFOLD", "NUM_CLASS"
     }
 
     _CLASSIFIER_LIST = [
@@ -93,6 +93,8 @@ class Parameters:
         "LinearSVR", "LinearSVC",
     ]
     CLASSIFIER = get_env_var_validate('CLASSIFIER', str, "LinearRegression", list_=_CLASSIFIER_LIST)
+    IS_CLASSIFICATION = get_env_var_bool('IS_CLASSIFICATION', True)
+    STRATIFIED = get_env_var_bool('STRATIFIED', True)
     NFOLD = get_env_var_validate('NFOLD', int, default=5, min_=2, max_=None)
     NUM_CLASS = get_env_var_validate('NUM_CLASS', int, 2, min_=2)
 

@@ -11,13 +11,12 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.svm import SVR, SVC
 from sklearn.svm import LinearSVR, LinearSVC
 from sklearn.model_selection import StratifiedKFold, KFold
-from sklearn.metrics import accuracy_score, roc_auc_score
 from tensorboardX import SummaryWriter
 
 from callbacks import Statistics
 from data_loader import train_data_loader
 from parameters import Parameters
-from utils import inverse_root_mean_squared_error
+from utils import accuracy_score, roc_auc_score, root_mean_squared_error
 
 
 ABEJA_STORAGE_DIR_PATH = os.getenv('ABEJA_STORAGE_DIR_PATH', '~/.abeja/.cache')
@@ -59,7 +58,7 @@ elif Parameters.CLASSIFIER == 'LinearSVC':
     classifier = LinearSVC
 
 if not Parameters.IS_CLASSIFICATION:
-    evaluator = inverse_root_mean_squared_error
+    evaluator = root_mean_squared_error
 elif IS_MULTI:
     evaluator = accuracy_score
 else:
@@ -89,8 +88,9 @@ def handler(context):
         model.fit(X_train.iloc[train_index], y_train[train_index])
         pred[valid_index] = model.predict(X_train.iloc[valid_index])
 
-        score = evaluator(y_train[valid_index], pred[valid_index])
+        score, loss = evaluator(y_train[valid_index], pred[valid_index])
         score_val = 0.0
+        loss_val = 0.0
 
         filename = os.path.join(ABEJA_TRAINING_RESULT_DIR, f'model_{i}.pkl')
         pickle.dump(model, open(filename, 'wb'))
@@ -103,13 +103,16 @@ def handler(context):
                 pred_val += np.identity(NUM_CLASS)[pred_val_cv]
             else:
                 pred_val += pred_val_cv
-            score_val = evaluator(y_val, pred_val_cv)
+            score_val, loss_val = evaluator(y_val, pred_val_cv)
 
         print('-------------')
-        print('cv {} || score:{:.4f} || val_score:{:.4f}'.format(i + 1, score, score_val))
+        print('cv {} || score:{:.4f} || loss:{:.4f} || val_score:{:.4f} || val_loss:{:.4f}'.format(
+            i + 1, score, loss, score_val, loss_val))
         writer.add_scalar('main/acc', score, i + 1)
+        writer.add_scalar('main/loss', loss, i + 1)
         writer.add_scalar('test/acc', score_val, i + 1)
-        statistics(i + 1, None, score, None, score_val)
+        writer.add_scalar('test/loss', loss_val, i + 1)
+        statistics(i + 1, loss, score, loss_val, score_val)
 
     score = evaluator(y_train, pred)
     score_val = 0.0

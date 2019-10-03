@@ -114,21 +114,25 @@ def handler(context):
         writer.add_scalar('test/loss', loss_val, i + 1)
         statistics(i + 1, loss, score, loss_val, score_val)
 
-    score = evaluator(y_train, pred)
+    score, loss = evaluator(y_train, pred)
     score_val = 0.0
+    loss_val = 0.0
 
     if DATALAKE_VAL_FILE_ID:
         if IS_MULTI:
             pred_val = np.argmax(pred_val, axis=1)
         else:
             pred_val /= len(models)
-        score_val = evaluator(y_val, pred_val)
+        score_val, loss_val = evaluator(y_val, pred_val)
 
     print('-------------')
-    print('cv total score:{:.4f} || cv total val_score:{:.4f}'.format(score, score_val))
+    print('cv total score:{:.4f} || cv total loss:{:.4f} || cv total val_score:{:.4f} || cv total val_loss:{:.4f}'.format(
+        score, loss, score_val, loss_val))
     statistics(Parameters.NFOLD, None, score, None, score_val)
     writer.add_scalar('main/acc', score, Parameters.NFOLD)
+    writer.add_scalar('main/loss', loss, Parameters.NFOLD)
     writer.add_scalar('test/acc', score_val, Parameters.NFOLD)
+    writer.add_scalar('test/loss', loss_val, Parameters.NFOLD)
 
     di = {
         **(Parameters.as_dict()),

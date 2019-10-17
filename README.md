@@ -127,3 +127,20 @@ SUPPORT_VECTOR_MAX_ITER|False|1000|Hard limit on iterations within solver, or -1
 CLASS_WEIGHT|False|None|dict or ‘balanced’. Set the parameter C of class i to `class_weight[i]*C` for SVC. If not given, all classes are supposed to have weight one. The “balanced” mode uses the values of y to automatically adjust weights inversely proportional to class frequencies in the input data as `n_samples / (n_classes * np.bincount(y))`
 DECISION_FUNCTION_SHAPE|False|ovr|Must be one of `[ovo, ovr]`.
 RANDOM_STATE|False|42|The seed of the pseudo random number generator used when shuffling the data for probability estimates.
+
+
+## Run on local
+Use `requirements-local.txt`.
+
+```
+$ pip install -r requirements-local.txt
+```
+
+Set environment variables.
+
+| env | type | description |
+| --- | --- | --- |
+| ABEJA_ORGANIZATION_ID | str | Your organization ID. |
+| ABEJA_PLATFORM_USER_ID | str | Your user ID. |
+| ABEJA_PLATFORM_PERSONAL_ACCESS_TOKEN | str | Your Access Token. |
+| DATASET_ID | str | Dataset ID. |

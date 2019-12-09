@@ -113,6 +113,7 @@ def handler(context):
         writer.add_scalar('test/acc', score_val, i + 1)
         writer.add_scalar('test/loss', loss_val, i + 1)
         statistics(i + 1, loss, score, loss_val, score_val)
+        writer.flush()
 
     score, loss = evaluator(y_train, pred)
     score_val = 0.0
@@ -133,6 +134,7 @@ def handler(context):
     writer.add_scalar('main/loss', loss, Parameters.NFOLD)
     writer.add_scalar('test/acc', score_val, Parameters.NFOLD)
     writer.add_scalar('test/loss', loss_val, Parameters.NFOLD)
+    writer.close()
 
     di = {
         **(Parameters.as_dict()),
